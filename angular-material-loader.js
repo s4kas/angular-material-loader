@@ -30,24 +30,40 @@
     return ngMaterialLoader;
   }])
   
-  .directive('ngMaterialLoader', ['$rootScope', '$document', '$mdDialog', function ($rootScope, $document, $mdDialog) {
+  .directive('ngMaterialLoader', ['$rootScope', '$document', '$mdPanel', function ($rootScope, $document, $mdPanel) {
     return {
       link: function (scope, element, attrs) {
-        var mdDialog = undefined,
-          body = angular.element($document[0].body), 
-          dialog = '<md-dialog aria-label="dialog" class="loader"><div layout="row" layout-align="center center"><md-progress-circular md-mode="indeterminate" md-diameter="96"></md-progress-circular></div></md-dialog>',
-          dialogOptions = {template: dialog,parent: body,clickOutsideToClose: false};
-        body.append(dialog);
+        var mdPanel = undefined,
+          position = $mdPanel.newPanelPosition().absolute().center(),
+          dialog = '<md-panel><div layout="row" layout-align="center center"><md-progress-circular md-mode="indeterminate" md-diameter="76"></md-progress-circular></div></md-panel>',
+          config = {
+            attachTo: element,
+            template: dialog,
+            disableParentScroll: true,
+            hasBackdrop: true,
+            position: position,
+            trapFocus: true,
+            clickOutsideToClose: false,
+            escapeToClose: false,
+            focusOnOpen: true,
+            zIndex: 150
+          };
+        
+        //fix - backDrop should overlap all content on page
+        element[0].style.height = 'auto';
         
         var start = function () {
-          if (!mdDialog) {
-            mdDialog = $mdDialog.show(dialogOptions);
+          if (!mdPanel) {
+            mdPanel = $mdPanel.create(config);
+            mdPanel.open();
           }
         };
 
         var stop = function () {
-          $mdDialog.hide();
-          mdDialog = undefined;
+          if (mdPanel) {
+            mdPanel.close();
+            mdPanel = undefined;
+          }
         };
         
         $rootScope.$on('$ngMaterialLoaderStart', function (event) {
@@ -88,7 +104,7 @@
           if (!isLoading()) {
             $ngMaterialLoader.stop();
           }
-        }, 500);
+        }, 300);
       }
     }
 
