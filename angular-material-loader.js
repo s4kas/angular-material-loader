@@ -12,15 +12,15 @@
   .service('ngMaterialLoader',['$rootScope','$timeout', function($rootScope, $timeout) {
     var self = this;
     
-    self.start = function () {
+    self.start = function (mode) {
       $timeout(function() {
-        $rootScope.$broadcast('$ngMaterialLoaderStart');
+        $rootScope.$broadcast('$ngMaterialLoaderStart', mode);
       });
     };
     
-    self.stop = function () {
+    self.stop = function (mode) {
       $timeout(function() {
-        $rootScope.$broadcast('$ngMaterialLoaderStop');
+        $rootScope.$broadcast('$ngMaterialLoaderStop', mode);
       });
     };
   }])
@@ -36,6 +36,7 @@
         var mdPanel = undefined,
           position = $mdPanel.newPanelPosition().absolute().center(),
           dialog = '<md-panel><div layout="row" layout-align="center center"><md-progress-circular md-mode="indeterminate" md-diameter="76"></md-progress-circular></div></md-panel>',
+          dialogLongPolling = '<md-panel><div layout="row" layout-align="center center"><md-progress-circular md-mode="indeterminate" md-diameter="76"></md-progress-circular></div></md-panel>',
           config = {
             attachTo: element,
             template: dialog,
@@ -47,31 +48,46 @@
             escapeToClose: false,
             focusOnOpen: true,
             zIndex: 150
-          };
+          },
+          configLongPolling = config,
+          standalone = false;
         
         //fix - backDrop should overlap all content on page
         element[0].style.height = 'auto';
         
-        var start = function () {
-          if (!mdPanel) {
+        var start = function (mode) {
+          if (!standalone) {
+            standalone = mode;
+          }
+          if (!mdPanel && mode) {
+            configLongPolling.template = dialogLongPolling;
+            mdPanel = $mdPanel.create(configLongPolling);
+            mdPanel.open();
+          }
+          if (!mdPanel && !mode) {
             mdPanel = $mdPanel.create(config);
             mdPanel.open();
           }
         };
 
-        var stop = function () {
-          if (mdPanel) {
+        var stop = function (mode) {
+          if (mdPanel && !standalone) {
             mdPanel.close();
             mdPanel = undefined;
           }
+          if (mdPanel && mode) {
+            mdPanel.close();
+            mdPanel = undefined;
+            standalone = false;
+          }
         };
         
-        $rootScope.$on('$ngMaterialLoaderStart', function (event) {
-          start();
+        $rootScope.$on('$ngMaterialLoaderStart', function (event, mode) {
+          start(mode);
         });
 
-        $rootScope.$on('$ngMaterialLoaderStop', function (event) {
-          stop();
+        $rootScope.$on('$ngMaterialLoaderStop', function (event, mode) {
+          stop(mode);
         });
 
         scope.$on('$destroy', function () {
