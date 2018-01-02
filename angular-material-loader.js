@@ -12,6 +12,12 @@
   .service('ngMaterialLoader',['$rootScope','$timeout', function($rootScope, $timeout) {
     var self = this;
     
+    self.startWithoutLoader = function () {
+      $timeout(function() {
+        $rootScope.$broadcast('$ngMaterialLoaderStartWithoutLoader');
+      });
+    };
+    
     self.start = function (mode) {
       $timeout(function() {
         $rootScope.$broadcast('$ngMaterialLoaderStart', mode);
@@ -51,24 +57,37 @@
           },
           configLongPolling = config,
           standalone = false;
+          showLoader = true;
         
         //fix - backDrop should overlap all content on page
         element[0].style.height = 'auto';
+        
+        var startWithoutLoader = function() {
+          if (showLoader) {
+            showLoader = false;
+          }
+        }
         
         var start = function (mode) {
           if (!standalone) {
             standalone = mode;
           }
-          if (!mdPanel && mode) {
+          if (!mdPanel && standalone) {
             configLongPolling.template = dialogLongPolling;
             mdPanel = $mdPanel.create(configLongPolling);
             mdPanel.open();
           }
-          if (!mdPanel && !mode) {
+          if (!mdPanel && !standalone && showLoader) {
             mdPanel = $mdPanel.create(config);
             mdPanel.open();
           }
         };
+        
+        var stopWithoutLoader = function() {
+          if (!showLoader) {
+            showLoader = true;
+          }
+        }
 
         var stop = function (mode) {
           if (mdPanel && !standalone) {
@@ -82,10 +101,18 @@
           }
         };
         
+        $rootScope.$on('$ngMaterialLoaderStartWithoutLoader', function (event) {
+          startWithoutLoader();
+        });
+        
         $rootScope.$on('$ngMaterialLoaderStart', function (event, mode) {
           start(mode);
         });
 
+        $rootScope.$on('$ngMaterialLoaderStopWithoutLoader', function (event) {
+          stopWithoutLoader();
+        });
+        
         $rootScope.$on('$ngMaterialLoaderStop', function (event, mode) {
           stop(mode);
         });
