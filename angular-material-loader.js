@@ -29,6 +29,12 @@
         $rootScope.$broadcast('$ngMaterialLoaderStop', mode);
       });
     };
+    
+    self.stopWithoutLoader = function () {
+      $timeout(function() {
+        $rootScope.$broadcast('$ngMaterialLoaderStopWithoutLoader');
+      });
+    };
   }])
   
   // Shortcut
@@ -72,7 +78,7 @@
           if (!standalone) {
             standalone = mode;
           }
-          if (!mdPanel && standalone) {
+          if (!mdPanel && standalone && showLoader) {
             configLongPolling.template = dialogLongPolling;
             mdPanel = $mdPanel.create(configLongPolling);
             mdPanel.open();
